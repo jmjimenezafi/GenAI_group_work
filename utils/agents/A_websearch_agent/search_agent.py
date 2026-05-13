@@ -1,26 +1,23 @@
 import os
 
 import logging
-from typing import Any, Dict, TypedDict
 
 from utils.agents.A_websearch_agent.websearch_service import search_news
+from utils.agents.workflow_models import WorkflowState
 
 
 LOGGER = logging.getLogger(__name__)
 
-class SearchState(TypedDict, total=False):
-    query: str
-    results: list[Dict[str, Any]],
-    error: str
-
-def search_agent(query: str) -> SearchState:
+def search_agent(query: str) -> WorkflowState:
     LOGGER.info("Searching agent started with query: %s", query)
     try:
-        results = search_news(query)
+        state = search_news(query)
     except Exception as e:
         LOGGER.error("Error occurred while searching: %s", e)
-        return SearchState(query=query, error=str(e))
-    
-    total_results = results.get("total_results", 0)
+        return WorkflowState(query=query, errors=[str(e)])
+
+    total_results = state.total_results
+    if total_results is None:
+        total_results = len(state.articles)
     LOGGER.info("Search completed with %d total results", total_results)
-    return SearchState(query=query, results=results)
+    return state

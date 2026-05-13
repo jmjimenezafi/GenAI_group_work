@@ -4,6 +4,7 @@ import httpx
 from bs4 import BeautifulSoup
 from tavily import TavilyClient
 from utils.llm_service import get_llm
+from utils.agents.workflow_models import ArticleState, WorkflowState
 
 from utils.prompts import REFORMULATE_QUERY_PROMPT, REFORMULATE_QUERY_TEMPLATE
 
@@ -55,7 +56,7 @@ def _iterate_results(
         items: list,
         client: httpx.Client,
         timeout_seconds: float
-    ) -> list:
+    ) -> list[ArticleState]:
     results = []
     for index, item in enumerate(items, start=1):
         url = (item.get("url") or "").strip()
@@ -76,15 +77,15 @@ def _iterate_results(
                 entry["status"] = "fetched"
                 entry["text"] = fetch_result.get("text", "")
                 entry["content_type"] = fetch_result.get("content_type", "")
-        results.append(entry)
+        results.append(ArticleState(**entry))
     return results
 
 
 def search_news(
-        query: str,
-        max_results: int = MAX_RESULTS,
-        timeout_seconds: float = TIMEOUT,
-) -> Dict[str, Any]:
+    query: str,
+    max_results: int = MAX_RESULTS,
+    timeout_seconds: float = TIMEOUT,
+) -> WorkflowState:
     clean_query = query.strip()
     if not clean_query:
         raise ValueError("La query no puede estar vacía")
@@ -108,12 +109,12 @@ def search_news(
 
     with httpx.Client(headers=HEADERS) as client:
         articles = _iterate_results(search_results.get("items", []), client, timeout_seconds)
-    return {
-        "query": clean_query,
-        "reformulated_query": reformulated_query,
-        "results": articles,
-        "total_results": len(articles),
-    }
+    return WorkflowState(
+        query=clean_query,
+        reformulated_query=reformulated_query,
+        articles=articles,
+        total_results=len(articles),
+    )
 
 
 

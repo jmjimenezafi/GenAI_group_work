@@ -1,19 +1,19 @@
 import os
-from typing import Any, Dict, List, Tuple
+from typing import List
 
 from utils.llm_service import get_llm
-from utils.agents.B_facts_agent.facts_model import ArticleSummary
+from utils.agents.workflow_models import ArticleState, ArticleSummary
 from utils.prompts import ARTICLE_SUMMARY_SYSTEM_PROMPT, ARTICLE_SUMMARY_USER_TEMPLATE, FACT_CROSS_CHECK_SYSTEM_PROMPT, FACT_CROSS_CHECK_TEMPLATE
 
 MAX_DOC_CHARS = int(os.getenv("FACTS_MAX_DOC_CHARS", "4000"))
 MAX_ARTICLE_FACTS = int(os.getenv("FACTS_MAX_ARTICLE_FACTS", "6"))
 
-def _build_article_summary(item: dict, llm) -> dict | None:
-    if item.get("status") != "fetched":
+def _build_article_summary(item: ArticleState, llm) -> ArticleState | None:
+    if item.status != "fetched":
         return None
-    url = item.get("url", "")
-    title = item.get("title", "")
-    text = item.get("text", "")
+    url = item.url
+    title = item.title or ""
+    text = item.text or ""
     if not text:
         return None
 
@@ -25,37 +25,40 @@ def _build_article_summary(item: dict, llm) -> dict | None:
         ("system", ARTICLE_SUMMARY_SYSTEM_PROMPT),
         ("user", user_prompt),
     ])
-    return {"url": url, "title": title, "summary": result.summary, "facts": result.facts[:MAX_ARTICLE_FACTS]}
+    item.summary = result.summary
+    item.facts = result.facts[:MAX_ARTICLE_FACTS]
+    return item
 
 
-def summarize_articles(items: List[dict]) -> List[dict]: # debe recibir la lista que salga del search_news
+def summarize_articles(items: List[ArticleState]) -> List[ArticleState]:  # debe recibir la lista que salga del search_news
     llm = get_llm()
-    summaries = []
     for item in items:
-        summary = _build_article_summary(item, llm)
-        if summary:
-            summaries.append(summary)
-    return summaries
+        _build_article_summary(item, llm)
+    return items
 
 
 
-def _build_fact_check_prompt(summaries: List[dict]) -> str:
+def _build_fact_check_prompt(summaries: List[ArticleState]) -> str:
     fact_base_prompt = FACT_CROSS_CHECK_SYSTEM_PROMPT + "\n\n"
     for i, summary in enumerate(summaries):
-        fact_base_prompt += f"Article {i+1}:\nTitle: {summary['title']}\nURL: {summary['url']}\nSummary: {summary['summary']}\nFacts:\n"
-        for fact in summary["facts"]:
+        title = summary.title or ""
+        url = summary.url
+        summary_text = summary.summary or ""
+        fact_base_prompt += (
+            f"Article {i+1}:\nTitle: {title}\nURL: {url}\nSummary: {summary_text}\nFacts:\n"
+        )
+        for fact in summary.facts:
             fact_base_prompt += f"- {fact}\n"
         fact_base_prompt += "\n"
     return fact_base_prompt
 
-def fact_cross_check(summaries: List[dict]) -> List[Dict[str, Any]]:
+def fact_cross_check(summaries: List[ArticleState]) -> str:
     llm = get_llm()
-    results = []
     fact_check_prompt = _build_fact_check_prompt(summaries)
     response = llm.invoke(
         [{"system": fact_check_prompt,
           "user": FACT_CROSS_CHECK_TEMPLATE.format(articles_info = fact_check_prompt)}]
     )
 
-    return response.content.strip
+    return response.content.strip()
 
