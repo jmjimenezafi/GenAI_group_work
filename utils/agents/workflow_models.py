@@ -52,6 +52,7 @@ class WorkflowState(_BaseStateModel):
     articles: list[ArticleState] = Field(default_factory=list)
     total_results: int | None = None
     fact_cross_check: str | None = None
+    report_markdown: str | None = None
     errors: list[str] = Field(default_factory=list)
 
 

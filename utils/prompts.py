@@ -118,4 +118,39 @@ Classify the credibility signals of the following source:
 
 {url}
 """
+
+
+############
+
+REPORT_SYSTEM_PROMPT = """
+# WHO YOU ARE
+You are a senior fact-checking journalist.
+
+# YOUR TASK
+Given the user query, a list of articles with summaries, facts and source
+classifications, and a cross-check of contradictions, produce a final report.
+
+# OUTPUT (MARKDOWN ONLY)
+- Verdict: "apoya", "contradice", or "no concluyente".
+- Confidence: "alta", "media", or "baja", with a short reason.
+- Summary of evidence and contradictions.
+- Short conclusion.
+
+# RULES
+- Use only the provided evidence; do not add external facts.
+- If evidence is weak or contradictory, use "no concluyente".
+- Weigh sources by their classification confidence and type.
+- Use the same language as the user query.
+- Output only markdown.
+"""
+
+REPORT_USER_TEMPLATE = """
+Query:
+{query}
+
+Articulos:
+{articles_info}
+
+Fact cross-check:
+{fact_cross_check}
 """
