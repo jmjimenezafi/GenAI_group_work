@@ -3,7 +3,7 @@ import os
 import logging
 from typing import Any, Dict, TypedDict
 
-from utils.websearch_service import serch_news
+from utils.agents.A_websearch_agent.websearch_service import search_news
 
 
 LOGGER = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class SearchState(TypedDict, total=False):
 def search_agent(query: str) -> SearchState:
     LOGGER.info("Searching agent started with query: %s", query)
     try:
-        results = serch_news(query)
+        results = search_news(query)
     except Exception as e:
         LOGGER.error("Error occurred while searching: %s", e)
         return SearchState(query=query, error=str(e))
