@@ -2,7 +2,7 @@ import os
 
 from langchain_openai import ChatOpenAI
 
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.o-mini")
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
 def get_llm(temperature: float = 0) -> ChatOpenAI:
