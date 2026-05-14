@@ -17,17 +17,18 @@ def _format_source(classification: SourceClassification | None) -> str:
     )
 
 
-def _format_article(article: ArticleState, index: int) -> str:
+def _format_article(article: ArticleState) -> str:
     facts = article.facts or []
     facts_block = "\n".join(f"- {fact}" for fact in facts) or "- (sin hechos)"
     summary = article.summary or "(sin resumen)"
     title = article.title or "(sin titulo)"
     source_line = _format_source(article.source_classification)
+    url = article.url
+    link = f"[{url}]({url})"
     return "\n".join(
         [
-            f"Articulo {index}:",
+            f"Articulo: {link}",
             f"Titulo: {title}",
-            f"URL: {article.url}",
             f"Resumen: {summary}",
             "Hechos:",
             facts_block,
@@ -40,7 +41,7 @@ def _build_articles_info(articles: list[ArticleState]) -> str:
     if not articles:
         return "Sin articulos disponibles."
     return "\n\n".join(
-        _format_article(article, index) for index, article in enumerate(articles, start=1)
+        _format_article(article) for article in articles
     )
 
 

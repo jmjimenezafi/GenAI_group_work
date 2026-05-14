@@ -6,7 +6,10 @@ from utils.prompts import SOURCE_CLASSIFIER_SYSTEM_PROMPT, SOURCE_CLASSIFIER_USE
 def _classify_source(url: str) -> SourceClassification:
     llm = get_llm()
     user_prompt = SOURCE_CLASSIFIER_USER_TEMPLATE.format(url=url)
-    structured_llm = llm.with_structured_output(SourceClassification)
+    structured_llm = llm.with_structured_output(
+        SourceClassification,
+        method="function_calling", # usamos function calling para que no sea estricto con los campo.
+    )
     result: SourceClassification = structured_llm.invoke([
         ("system", SOURCE_CLASSIFIER_SYSTEM_PROMPT),
         ("user", user_prompt),

@@ -11,6 +11,7 @@ from utils.prompts import REFORMULATE_QUERY_PROMPT, REFORMULATE_QUERY_TEMPLATE
 
 MAX_RESULTS = int(os.getenv("SEARCH_MAX_RESULTS", "10"))
 TIMEOUT = int(os.getenv("SEARCH_TIMEOUT_SECONDS", "6"))
+SEARCH_DEPTH = os.getenv("SEARCH_DEPTH", "advanced")
 HEADERS = {"User-Agent": os.getenv("SEARCH_USER_AGENT", "gen-ai-trabajo/1.0")}
 
 
@@ -38,18 +39,29 @@ def _get_article_text(
         timeout_seconds: float,
 ) -> Dict[str, Any]:
     try:
-        response = client.get(url, timeout_seconds, follow_redirects=True)
+        timeout = httpx.Timeout(
+            timeout_seconds,
+            connect=timeout_seconds,
+            read=timeout_seconds,
+            write=timeout_seconds,
+        )
+        response = client.get(url, timeout=timeout, follow_redirects=True)
     except httpx.RequestError:
         return {"url": url, "text": "", "error": "Request failed"}
     
     if response.status_code >= 400:
         return {"url": url, "text": "", "error": f"HTTP {response.status_code}"}
     
+    content_type = response.headers.get("Content-Type", "")
+    content_type_lower = content_type.lower()
+    if "text/html" not in content_type_lower and "text/plain" not in content_type_lower:
+        return {"url": url, "text": "", "error": f"unsupported_content_type: {content_type}"}
+
     html = response.text or ""
     text = _extract_text(html)
     return {
         "text": text,
-        "content_type": response.headers.get("Content-Type", ""),
+        "content_type": content_type,
     }
 
 def _iterate_results(
@@ -104,11 +116,20 @@ def search_news(
     search_results = tavily_client.search(
         reformulated_query,
         max_results=max_results,
-        search_depth = "basic"
+        search_depth=SEARCH_DEPTH,
     )
+    items = search_results.get("results") or search_results.get("items") or []
+    if not items and reformulated_query != clean_query:
+        search_results = tavily_client.search(
+            clean_query,
+            max_results=max_results,
+            search_depth=SEARCH_DEPTH,
+        )
+        items = search_results.get("results") or search_results.get("items") or []
+        reformulated_query = clean_query
 
     with httpx.Client(headers=HEADERS) as client:
-        articles = _iterate_results(search_results.get("items", []), client, timeout_seconds)
+        articles = _iterate_results(items, client, timeout_seconds)
     return WorkflowState(
         query=clean_query,
         reformulated_query=reformulated_query,
