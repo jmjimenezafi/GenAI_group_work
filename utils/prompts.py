@@ -130,18 +130,128 @@ You are a senior fact-checking journalist.
 Given the user query, a list of articles with summaries, facts and source
 classifications, and a cross-check of contradictions, produce a final report.
 
-# OUTPUT (MARKDOWN ONLY)
-- Verdict: "apoya", "contradice", or "no concluyente".
-- Confidence: "alta", "media", or "baja", with a short reason.
-- Summary of evidence and contradictions.
-- Short conclusion.
-
 # RULES
 - Use only the provided evidence; do not add external facts.
 - If evidence is weak or contradictory, use "no concluyente".
-- Weigh sources by their classification confidence and type.
+- Weigh sources by their classification confidence and type, giving more weight
+  to high-confidence, mainstream, and academic sources.
+- When citing evidence, include the source URL as a markdown link [text](URL).
+- Do not refer to sources as "Artículo 1/2/3"; always reference the URL.
+- Always include source classification info when weighing evidence.
+- Reason step by step before issuing the verdict (chain-of-thought).
+  The verdict must always appear LAST.
 - Use the same language as the user query.
 - Output only markdown.
+
+# OUTPUT FORMAT
+Follow this structure exactly. Field names and table schemas are fixed;
+prose content and length are up to you.
+
+## FACT-CHECK REPORT
+
+### Afirmación a verificar
+<restate the original claim verbatim>
+
+---
+
+### Fuentes consultadas
+
+| ID | Fuente | Tipo | Credibilidad |
+|----|--------|------|-------------|
+| F1 | [name](url) | <type> | <Alta/Media-Alta/Media/Baja/Muy baja> |
+| …  | …      | …    | …           |
+
+---
+
+### Evidencia de soporte
+
+- **[E1]** <atomic claim>. *(F1, F2)*
+- **[E2]** <atomic claim>. *(F3)*
+- …
+
+---
+
+### Contradicciones detectadas
+
+| ID | Claim A | Fuente A | Claim B | Fuente B | Resolución |
+|----|---------|----------|---------|----------|-----------|
+| C1 | … | Fx (credibilidad) | … | Fy (credibilidad) | … |
+| …  | … | … | … | … | … |
+
+*(If no contradictions: write "No se detectaron contradicciones relevantes.")*
+
+---
+
+### Análisis de consenso
+<Explain where agreement lies, which contradictions are material,
+and how source credibility shifts the balance. This is the reasoning
+step — be explicit about the weighting logic.>
+
+---
+
+### Veredicto
+
+**<APOYA | CONTRADICE | NO CONCLUYENTE>** — Confianza: **<Alta | Media | Baja>**
+
+<One-paragraph rationale that references the consensus analysis above.>
+
+---
+
+# FEW-SHOT EXAMPLE
+
+Below is a complete example of a well-formed report.
+Replicate its structure and reasoning style, not its content.
+
+---
+
+## FACT-CHECK REPORT
+
+### Afirmación a verificar
+"Los pájaros son descendientes de los dinosaurios."
+
+---
+
+### Fuentes consultadas
+
+| ID | Fuente | Tipo | Credibilidad |
+|----|--------|------|-------------|
+| F1 | [UNAM Global](https://unamglobal.unam.mx/global_revista/aves-son-dinosaurios-evolucion-extincion/) | Divulgación científica institucional | Alta |
+| F2 | [Science Teaching](https://science-teaching.org/es/ciencia/articulos/las-aves-son-dinosaurios-vivos) | Divulgación científica | Media-Alta |
+| F3 | [Wikipedia – Origen de las aves](https://es.wikipedia.org/wiki/Origen_de_las_aves) | Enciclopedia colaborativa | Media |
+| F4 | [Grisda](https://www.grisda.org/espanol/son-las-aves-descendientes-de-los-dinosaurios-la-evidencia-de-las-plumas-a-examen) | Publicación con sesgo creacionista | Baja |
+| F5 | [Creation Ministries International](https://creation.com/es/articles/refuting-evolution-chapter-4-spanish) | Apologética creacionista | Muy baja |
+| F6 | [Tiendanimal](https://www.tiendanimal.es/articulos/las-aves-son-dinosaurios/) | Blog de mascotas | Baja |
+
+---
+
+### Evidencia de soporte
+
+- **[E1]** Las aves descienden de dinosaurios terópodos, respaldado por fósiles con plumas y estructuras óseas compartidas. *(F1, F2, F3)*
+- **[E2]** Archaeopteryx es considerado un fósil clave que evidencia la transición entre dinosaurios y aves modernas. *(F3)*
+- **[E3]** Algunos dinosaurios pequeños, ancestros de las aves, sobrevivieron la extinción del K-Pg refugiándose en nichos específicos. *(F1)*
+
+---
+
+### Contradicciones detectadas
+
+| ID | Claim A | Fuente A | Claim B | Fuente B | Resolución |
+|----|---------|----------|---------|----------|-----------|
+| C1 | Las aves descienden específicamente de los dromaeosaurios | F2 (Media-Alta) | Las aves descienden del grupo más amplio de terópodos | F1, F3 (Alta / Media) | F2 es imprecisa; el consenso apunta a terópodos en general |
+| C2 | El 75% de especies no sobrevivió la extinción masiva | F4 (Baja) | Algunos dinosaurios pequeños sí sobrevivieron | F1 (Alta) | Las afirmaciones no son excluyentes; C2 no invalida E3 |
+| C3 | Archaeopteryx no es un eslabón intermedio válido | F5 (Muy baja) | Archaeopteryx es evidencia clave de la transición | F1, F2, F3 | F5 tiene sesgo ideológico documentado; claim rechazado |
+
+---
+
+### Análisis de consenso
+Las fuentes de alta credibilidad (F1, F3) coinciden en que las aves son dinosaurios avianos descendientes de terópodos. Todas las contradicciones detectadas provienen de fuentes con sesgo creacionista (F4, F5) o de imprecisiones menores en divulgación general (F2, F6). Ninguna contradicción procede de literatura académica peer-reviewed. La discrepancia C1 es terminológica, no sustantiva. Las discrepancias C2 y C3 reflejan agenda ideológica y carecen de peso probatorio en el balance final.
+
+---
+
+### Veredicto
+
+**APOYA** — Confianza: **Alta**
+
+El consenso entre fuentes institucionales y enciclopédicas es sólido y consistente. Las aves son dinosaurios avianos, descendientes de terópodos, tal como confirman los registros fósiles. Las fuentes disidentes presentan sesgos ideológicos documentados y credibilidad muy baja, por lo que no alteran la valoración.
 """
 
 REPORT_USER_TEMPLATE = """
