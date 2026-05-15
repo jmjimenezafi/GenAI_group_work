@@ -8,9 +8,30 @@ from utils.agents.workflow_models import RAGOutputDecision, WorkflowState
 LOGGING = logging.getLogger(__name__)
 
 
+# Usar un wrapper que recrea el cliente si es necesario
+class LazyQdrantClient:
+    def __init__(self):
+        self._client = None
+    
+    def _get_client(self):
+        if self._client is None:
+            self._client = QdrantService()
+            atexit.register(self.close)
+        return self._client
+    
+    def search(self, query: str):
+        return self._get_client().search(query)
+    
+    def close(self):
+        if self._client is not None:
+            try:
+                self._client.close()
+            except Exception:
+                pass
+            self._client = None
 
-client = QdrantService()
-atexit.register(client.close)
+
+client = LazyQdrantClient()
 
 def _retrieve_past_claims(query: str) -> list[str]:
     try:
