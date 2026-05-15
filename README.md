@@ -98,7 +98,36 @@ Si pones una ruta relativa distinta, recuerda que se interpreta respecto al dire
 
 ## Uso del verificador
 
-### Ejecutar el flujo principal
+### Front web con Streamlit (recomendado)
+
+Si quieres una interfaz visual, ejecuta:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Esto abrirá la app en el navegador, normalmente en `http://localhost:8501`.
+
+**Características:**
+
+- **Pestaña Analizador**: 
+  - Escribe una afirmación para verificar
+  - Muestra progreso visual con estado de carga
+  - Muestra logs de cada paso ejecutado (expandible)
+  - Genera reporte en Markdown
+  - Descarga automática de `report_output.md` y `new_claims.csv`
+
+- **Pestaña Claims**:
+  - Ve los claims pendientes de subir (en `new_claims.csv`)
+  - Botón para subir directamente a Qdrant desde la UI
+  - Historico completo de claims subidos (en `claims.csv`)
+  - Descarga del histórico
+
+**Nota**: Si ves warnings sobre `torchvision` al arrancar Streamlit, son normales y no afectan la funcionalidad. Vienen de dependencias internas de `transformers` (usada para embeddings).
+
+### Ejecutar el flujo desde consola
+
+Si prefieres usar la línea de comandos sin interfaz:
 
 ```bash
 python main.py
@@ -200,3 +229,16 @@ Comprueba `QDRANT_PATH` en `.env` y usa una ruta relativa al directorio de ejecu
 ### `new_claims.csv` no desaparece
 
 Eso significa que la subida a Qdrant no se completo correctamente. El archivo solo se borra si la ingesta termina bien.
+
+### Streamlit muestra warnings de torchvision
+
+Esto es normal. Los warnings `ModuleNotFoundError: No module named 'torchvision'` vienen de la libreria `transformers` (que usamos para embeddings) durante el escaneo de modulos de Streamlit. No afectan la funcionalidad de la app.
+
+Si quieres suprimirlos, puedes silenciar los logs de Streamlit creando un archivo `.streamlit/config.toml`:
+
+```toml
+[logger]
+level = "warning"
+```
+
+Pero no es necesario para que la app funcione.
