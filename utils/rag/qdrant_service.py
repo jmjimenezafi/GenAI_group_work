@@ -47,9 +47,9 @@ class QdrantService:
 
     def search(self, query: str, top_k: int = 5):
         query_embedding = self.embedding_model.encode(query).tolist()
-        search_result = self.client.query_points(
+        return self.client.query_points(
             collection_name=self.collection_name,
-            query_vector=query_embedding,
-            limit=top_k
+            query=query_embedding,
+            limit=top_k,
+            with_payload=True,
         )
-        return search_result

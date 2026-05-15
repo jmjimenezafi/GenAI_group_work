@@ -52,8 +52,16 @@ class WorkflowState(_BaseStateModel):
     articles: list[ArticleState] = Field(default_factory=list)
     total_results: int | None = None
     fact_cross_check: str | None = None
+    rag_response: "RAGOutputDecision | None" = None
+    past_claims: list[str] = Field(default_factory=list)
     report_markdown: str | None = None
     errors: list[str] = Field(default_factory=list)
+
+
+class RAGOutputDecision(BaseModel):
+    can_answer: bool
+    relevant_articles: list[int] | None
+    reasoning: str
 
 
 def coerce_article(item: ArticleState | dict) -> ArticleState:
