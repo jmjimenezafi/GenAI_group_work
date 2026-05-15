@@ -1,4 +1,3 @@
-import os
 import uuid
 from pathlib import Path
 
@@ -27,7 +26,10 @@ def main():
             df_claims = pd.concat([df_claims, df])
             df_claims.to_csv(claims_path, index=False)
         else:
-            os.rename(new_claims_path, claims_path)
+            df.to_csv(claims_path, index=False)
+
+        if new_claims_path.exists():
+            new_claims_path.unlink()
     finally:
         qdrant_service.close()
     
